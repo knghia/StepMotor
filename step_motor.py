@@ -1,5 +1,6 @@
 
 import sys
+from serial import Serial
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5.QtCore import *
@@ -13,8 +14,14 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.InitGui()
+        self.InitPort()
         self.InitControlStep()
-        self.show()
+
+    def InitPort(self):
+        self.uart = Serial(port='COM5',baudrate=9600)
+        if(self.uart.isOpen()):
+            return
+        self.uart.open()
 
     def InitGui(self):
         self.title = "Control step motor"
@@ -24,6 +31,7 @@ class Window(QWidget):
         self.height = 300
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
+
 
     def InitControlStep(self):
 
@@ -46,17 +54,30 @@ class Window(QWidget):
         self.entry_value.returnPressed.connect(self.load_value)
         self.entry_value.setValidator(QIntValidator())
 
+        self.send_value_angle = QPushButton(self.control_step,text='LOAD')
+        self.send_value_angle.clicked.connect(self.send_angle)
+        self.send_value_angle.move(200,60)
+
         #self.send_value_button = QPushButton(self.control_step,text='SEND')
+
+    def send_angle(self):
+        value = int(self.entry_value.text())
+        self.uart.write((':'+str(value)).encode())
 
     def load_value(self):
         value = int(self.entry_value.text())
         self.slider.setValue(value)
 
+
     def changedValue(self,value):
         self.entry_value.setText(str(value))
 
 
+def main():
+    App = QApplication(sys.argv)
+    window = Window()
+    window.show()
+    sys.exit(App.exec())
 
-App = QApplication(sys.argv)
-window = Window()
-sys.exit(App.exec())
+if __name__ == "__main__":
+    main()
